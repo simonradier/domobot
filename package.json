@@ -1,0 +1,32 @@
+{
+  "name": "domobot",
+  "version": "0.0.1",
+  "description": "Domobot is bot for Domotique",
+  "main": "./build/index.js",
+  "scripts": {
+    "start:dev": "nodemon --inspect",
+    "start": "npm run build && node build/index.js",
+    "build": "rimraf ./build && tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simonradier/domobot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/simonradier/domobot/issues"
+  },
+  "homepage": "https://github.com/simonradier/domobot#readme",
+  "devDependencies": {
+    "@types/node": "^14.0.13",
+    "nodemon": "^2.0.4",
+    "rimraf": "^3.0.2",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.5"
+  },
+  "dependencies": {
+    "chalk": "^4.1.0"
+  }
+}
