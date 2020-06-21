@@ -1,4 +1,5 @@
 import { Logger } from './utils/logger';
+import { HueConnector } from './connector/hue-connector';
 
 Logger.info("Hello World");
 
@@ -18,5 +19,6 @@ class Toto {
     }
 }
 
-let t = new Toto();
-t.test();
+let c : HueConnector = new HueConnector();
+
+c.discover();
