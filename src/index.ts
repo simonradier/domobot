@@ -1,5 +1,6 @@
 import { Logger } from './utils/logger';
 import { HueConnector } from './connector/hue-connector';
+import { Network } from './utils/network';
 
 Logger.info("Hello World");
 
@@ -22,3 +23,6 @@ class Toto {
 let c : HueConnector = new HueConnector();
 
 c.discover();
+Network.getLocalIP();
+
+
