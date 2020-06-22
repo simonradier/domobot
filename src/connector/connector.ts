@@ -1,6 +1,6 @@
 import { DomoObject } from "../iot/domo-object"
 
 export abstract class Connector {
-    public abstract discover() : Array<DomoObject>;
+    public abstract async discover() : Promise<Array<DomoObject>>;
 
 }
