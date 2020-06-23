@@ -10,9 +10,10 @@ export class Network {
     private static async getNetworkInfo() : Promise<void> {
         let networkInterface = os.networkInterfaces();
         let list = Object.keys(networkInterface);
-        console.log(list.length);
+        Logger.debug("Number of network interfaces : " + list.length);
+        Logger.debug("List of network interfaces : " + list.join("|"));
         for (let iname of list) {
-            if (iname.startsWith("en") || iname.startsWith("wlan")) {
+            if (iname.startsWith("en") || iname.startsWith("wlan") || iname.startsWith("wifi")) {
                 // Regarder si possible de pas caster
                 let inter = <os.NetworkInterfaceInfo[]> networkInterface[iname];
                 for (let line of inter) {

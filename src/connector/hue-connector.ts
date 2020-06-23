@@ -5,34 +5,45 @@ import { Logger } from "../utils/logger";
 import { Network } from "../utils/network";
 
 export class HueConnector implements Connector {
-    public async discover() : Promise<Array<DomoObject>> {
-        let result : Array<DomoObject> = new Array<DomoObject>();
-        let client : dgram.Socket = dgram.createSocket("udp4");
-        let address : string = await Network.getLocalIP();
-        let broadcast : string = await Network.getBroadcastAddress();
 
-        let message = "M-SEARCH * HTTP/1.1\nHOST: " + address + ":1900\nMAN: ssdp:discover\nMX: 10\nST: ssdp:all";
+    public readonly name : string = "HueConnector";
 
-        client.on("listening", () => {
-            Logger.debug("UDP socket is binded on port 1900");
-            client.setBroadcast(true);
-            Logger.debug("broadcast activated");
-            client.send(message, 0, message.length, 1900, broadcast);
-        }) 
+    constructor(private _client : dgram.Socket = dgram.createSocket("udp4")){
+    }
 
-        client.on('message', this._retreiveInfo);
-        client.bind(1900);
+    private _buildHeader (data : string) : Map<string, string> {
+        let result : Map<string, string> = new Map<string, string>();
+        for (let line of data.split("\n")){
+            if (line.match(": "))
+                result.set(line.split(": ")[0], line.split(": ")[1]);
+        }
         return result;
     }
 
-    private _getBroadcastAdresse(ip : string) : string {
-        let ba = ip.split(".").splice(0,3).join(".") + ".255";
-        Logger.debug("Calculating Broadcast address from " + ip + " => " + ba)
-        return ba;
+    public async discover() : Promise<Array<DomoObject>> {
+        let result : Array<DomoObject> = new Array<DomoObject>();
+        let address : string = await Network.getLocalIP();
+        let broadcast : string = await Network.getBroadcastAddress();
+
+        let message = "M-SEARCH * HTTP/1.1\nHOST: " + address + ":6900\nMAN: ssdp:discover\nMX: 10\nST: ssdp:all";
+
+        this._client.on("listening", () => {
+            Logger.debug("UDP socket is binded on port 6900");
+            this._client.setBroadcast(true);
+            Logger.debug("broadcast activated");
+            this._client.send(message, 0, message.length, 1900, broadcast);
+        }) 
+
+        this._client.on('message', (msg : Buffer, rinfo : dgram.RemoteInfo) => {
+            this._retreiveInfo(msg, rinfo)});
+        this._client.bind(6900, address);
+        return result;
     }
 
     private _retreiveInfo(msg : Buffer, rinfo : dgram.RemoteInfo) {
-        Logger.debug(msg.toString());
-        Logger.debug("server:" + rinfo.address + ":" + rinfo.port);
+        Logger.trace(msg.toString());
+        Logger.debug("Messaged received from server:" + rinfo.address + ":" + rinfo.port);
+        let data = msg.toString();
+        let header = this._buildHeader(data);
     }
 }
