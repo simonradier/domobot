@@ -1,8 +1,9 @@
 import os from "os";
 import { rejects } from "assert";
 import { Logger } from "./logger";
+import { reset } from "chalk";
 
-export class Network {
+export class NetworkHelper {
 
     private static _localAdress : string = "";
     private static _localMask : string = "";
@@ -28,22 +29,29 @@ export class Network {
 
     public static async getLocalIP() : Promise<string> {
         if (this._localAdress == "")
-            await Network.getNetworkInfo();
+            await NetworkHelper.getNetworkInfo();
         return this._localAdress;
     }
 
     public static async getNetMask() : Promise<string> {
         if (this._localAdress == "")
-            await Network.getNetworkInfo();
+            await NetworkHelper.getNetworkInfo();
         return this._localMask;
     }
 
     public static async getBroadcastAddress() : Promise<string> {
         if (this._localAdress == "")
-            await Network.getNetworkInfo();
+            await NetworkHelper.getNetworkInfo();
         let ba = this._localAdress.split(".").splice(0,3).join(".") + ".255";
         Logger.debug("Calculating Broadcast address from " + this._localAdress + " => " + ba)
         return ba;    
+    }
+
+
+    public static async UPNPDiscover() : Promise<Array<Map<string,string>>> {
+        return new Promise<Array<Map<string, string>>>((resolve, reject) => {
+
+        });
     }
 
 }

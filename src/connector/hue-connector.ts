@@ -2,7 +2,7 @@ import { Connector } from "./connector";
 import { DomoObject } from "../iot/domo-object";
 import dgram from "dgram";
 import { Logger } from "../utils/logger";
-import { Network } from "../utils/network";
+import { NetworkHelper } from "../utils/network-helper";
 
 export class HueConnector implements Connector {
 
@@ -22,8 +22,8 @@ export class HueConnector implements Connector {
 
     public async discover() : Promise<Array<DomoObject>> {
         let result : Array<DomoObject> = new Array<DomoObject>();
-        let address : string = await Network.getLocalIP();
-        let broadcast : string = await Network.getBroadcastAddress();
+        let address : string = await NetworkHelper.getLocalIP();
+        let broadcast : string = await NetworkHelper.getBroadcastAddress();
 
         let message = "M-SEARCH * HTTP/1.1\nHOST: " + address + ":6900\nMAN: ssdp:discover\nMX: 10\nST: ssdp:all";
 
