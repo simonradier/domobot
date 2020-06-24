@@ -10,5 +10,5 @@ export enum LogLevel {
 
 
 export class Configuration {
-    public static logLevel : LogLevel = LogLevel.Debug;
+    public static logLevel : LogLevel = LogLevel.Trace;
 }
