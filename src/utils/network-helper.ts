@@ -13,32 +13,38 @@ export class UPNPDevice {
         Logger.debug("Découverte d'un nouvel objet UPNP : " + this.data.get("USN")?.split("::")[0]);
     }
 
-    get Host(): string | undefined {
-        return this.data.get("HOST");
+    get Host(): string {
+        return this.data.get("HOST") || "";
     }
 
-    get CacheControl(): string | undefined {
-        return this.data.get("CACHE-CONTROL");
+    get CacheControl(): string {
+        return this.data.get("CACHE-CONTROL") || "";
+
     }
 
-    get Location(): string | undefined {
-        return this.data.get("Location");
+    get Location(): string {
+        return this.data.get("LOCATION") || "";
     }
 
-    get Server(): string | undefined {
-        return this.data.get("SERVER");
+    get Server(): string {
+        return this.data.get("SERVER") || "";
     }
 
-    get ST(): string | undefined {
-        return this.data.get("ST");
+    get ST(): string {
+        return this.data.get("ST") || "";
     }
 
-    get USN(): string | undefined {
-        return this.data.get("USN")?.split("::")[0];
+    get USN(): string {
+        return this.data.get("USN")?.split("::")[0] || "";
     }
 
-    get NT(): string | undefined {
-        return this.data.get("NT");
+    get NT(): string {
+        return this.data.get("NT") || "";
+    }
+}
+
+class UPNPCallBackFilter {
+    constructor (public callback : (ud : UPNPDevice) => void, public filterName : string, public filterValue : string | RegExp) {
     }
 }
 
@@ -49,7 +55,7 @@ export class NetworkHelper {
     private static _client =  dgram.createSocket("udp4");
     private static _UPNPDevices : Array<UPNPDevice> = new Array<UPNPDevice>();
     private static _discovering = false;
-    private static _UPNPdDiscoverCallBack : Array<(ud : UPNPDevice) => void> = new Array<(ud : UPNPDevice) => void>();
+    private static _UPNPdDiscoverCallBack : Array<UPNPCallBackFilter> = new Array<UPNPCallBackFilter>();
 
     private static _buildHeader (data : string) : Map<string, string> {
         let result : Map<string, string> = new Map<string, string>();
@@ -101,6 +107,7 @@ export class NetworkHelper {
     }
 
     public static async UPNPDiscover(callback : (ud : UPNPDevice) => void, UPNPfield : string, expectedValue : string | RegExp)  {
+        NetworkHelper._UPNPdDiscoverCallBack.push(new UPNPCallBackFilter(callback, UPNPfield, expectedValue));
         if (NetworkHelper._discovering)
             return;
         let address : string = await NetworkHelper.getLocalIP();
@@ -121,17 +128,22 @@ export class NetworkHelper {
             let header = NetworkHelper._buildHeader(data);
             let usn = header.get("USN")?.split("::")[0];
             let found = false;
+            //Logger.trace(data);
             for (let upnp of NetworkHelper._UPNPDevices) {
                 if (upnp.USN == usn) {
                     found = true;
                     break;
                 }
             }
-            if (!found)
-            {
+            if (!found) {
                 NetworkHelper._UPNPDevices.push(new UPNPDevice(header));
-                if (NetworkHelper._UPNPDevices[NetworkHelper._UPNPDevices.length - 1].data.get(UPNPfield)?.match(expectedValue))
-                    callback(NetworkHelper._UPNPDevices[NetworkHelper._UPNPDevices.length - 1]);
+                for (let up of NetworkHelper._UPNPdDiscoverCallBack){
+                    if (up.filterName != "")
+                        if (NetworkHelper._UPNPDevices[NetworkHelper._UPNPDevices.length - 1].data.get(up.filterName)?.match(up.filterValue))
+                            callback(NetworkHelper._UPNPDevices[NetworkHelper._UPNPDevices.length - 1]);
+                        else
+                            callback(NetworkHelper._UPNPDevices[NetworkHelper._UPNPDevices.length - 1]);
+                }
             }
         });
         NetworkHelper._client.bind(6900, address);

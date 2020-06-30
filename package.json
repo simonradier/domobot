@@ -21,6 +21,7 @@
   "homepage": "https://github.com/simonradier/domobot#readme",
   "devDependencies": {
     "@types/node": "^14.0.13",
+    "@types/bent": "^7.0.2",
     "nodemon": "^2.0.4",
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",

@@ -3,6 +3,7 @@ import { DomoObject } from "../iot/domo-object";
 import dgram from "dgram";
 import { Logger } from "../utils/logger";
 import { NetworkHelper, UPNPDevice } from "../utils/network-helper";
+import bent from "bent"
 
 export class HueConnector implements Connector {
 
@@ -16,9 +17,12 @@ export class HueConnector implements Connector {
     }
 
 
-    public newUPNPDevice = (ud : UPNPDevice) => {
+    public newUPNPDevice = async (ud : UPNPDevice) => {
         Logger.info("New Hue Bridged added");
-        this._UPNPDevices.push();
+        this._UPNPDevices.push(ud);
+        console.log(ud);
+        let obj : any = await bent('json')('https://discovery.meethue.com');
+        Logger.trace(JSON.stringify(obj));
     }
 
 }
