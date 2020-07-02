@@ -21,9 +21,12 @@ export class HueConnector implements Connector {
     }
 
 
-    public newUPNPDevice = (ud : UPNPDevice) => {
+    public newUPNPDevice = async (ud : UPNPDevice) => {
         Logger.info("New Hue Bridged added");
-        this._UPNPDevices.push();
+        this._UPNPDevices.push(ud);
+        console.log(ud);
+        let obj : any = await bent('json')('https://discovery.meethue.com');
+        Logger.trace(JSON.stringify(obj));
     }
 
 }
