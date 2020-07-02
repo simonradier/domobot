@@ -1,8 +1,13 @@
 import { Connector } from "./connector";
 import { DomoObject } from "../iot/domo-object";
-import dgram from "dgram";
 import { Logger } from "../utils/logger";
 import { NetworkHelper, UPNPDevice } from "../utils/network-helper";
+import * as bent from "bent";
+
+export class HueBridge {
+    public IP : string = "";
+    public ID : string =  "";
+}
 
 export class HueConnector implements Connector {
 

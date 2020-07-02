@@ -16,12 +16,19 @@ export class Logger {
         let strInfo : string = (<string> (new Error().stack)).split("\n")[3].split("at ")[1];
         let leftStr : string = strInfo.split(" (")[0];
         let rightStr : string =  strInfo.split(" (")[1];
-        let rightSplitInfo : string[] = rightStr.split("/");
+        // If no function name
+        let rightSplitInfo : string[] = rightStr ? rightStr.split("/") : leftStr.split("/");
         let className :  string = "";
         let methodname : string = "";
+        let fileLineNumber : string = "";
         let getInfo : number = 0;
-        methodname = leftStr;
-        let fileLineNumber : string = rightSplitInfo[rightSplitInfo.length - 1].split(/:[0-9]*\)/)[0];
+        if (rightStr) {
+            methodname = leftStr;
+            fileLineNumber = rightSplitInfo[rightSplitInfo.length - 1].split(/:[0-9]*\)/)[0];
+        } else {
+            methodname = "anonymous";
+            fileLineNumber = rightSplitInfo[rightSplitInfo.length - 1].split(/:[0-9]*\)/)[0];
+        }
         return methodname + "|" + fileLineNumber;
     }
 

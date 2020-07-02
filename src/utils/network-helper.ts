@@ -1,8 +1,7 @@
 import os from "os";
-import { rejects } from "assert";
 import { Logger } from "./logger";
-import { reset } from "chalk";
 import dgram from "dgram";
+import { Socket } from "net"
 
 
 export class UPNPDevice {
@@ -135,6 +134,45 @@ export class NetworkHelper {
             }
         });
         NetworkHelper._client.bind(6900, address);
+    }
+
+
+    private static async _portCheck(host : string, port : number) : Promise<boolean> {
+        return new Promise<boolean> ((resolve, reject) => {
+            let socket = new Socket();
+            let status : boolean = false;
+            // Socket connection established, port is open
+            socket.on('connect', function() { 
+                status = true; 
+                socket.end();});
+            socket.setTimeout(2000);// If no response, assume port is not listening
+            socket.on('timeout', function() {
+                socket.destroy();
+                resolve(status);
+            });
+            socket.on('error', function(exception) {reject(exception)});
+            socket.on('close', function(exception) {resolve(status)});    
+            socket.connect(port, host); 
+        });
+    }
+
+    public static async PortDiscover(port : number, callback :  (ip : string, port : number) => void) : Promise<void> {
+        let host = await NetworkHelper.getLocalIP();
+        let network = host.split(".").splice(0,3).join(".");
+        Logger.debug("network");
+        for (let i = 2; i < 255; i++) {
+            let ip = network + "." + i;
+            NetworkHelper._portCheck(ip, port).then((check) => {
+                if (check){
+                    callback(ip, port);
+                    Logger.debug(ip + " has the port " + port + " open.")
+                } /*else 
+                    //Logger.trace(ip + " has the port " + port + " closed.")*/
+            }).catch( (e) => {
+                Logger.trace(<string> e);
+            });
+        }
+
     }
 
 }
