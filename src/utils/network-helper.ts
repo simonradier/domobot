@@ -2,6 +2,7 @@ import os from "os";
 import { Logger } from "./logger";
 import dgram from "dgram";
 import { Socket } from "net"
+import { Observable } from "rxjs"
 
 
 export class UPNPDevice {
@@ -155,7 +156,8 @@ export class NetworkHelper {
             let status : boolean = false;
             // Socket connection established, port is open
             socket.on('connect', function() { 
-                status = true; 
+                status = true;
+                socket.remoteAddress
                 socket.end();});
             socket.setTimeout(2000);// If no response, assume port is not listening
             socket.on('timeout', function() {
@@ -174,6 +176,7 @@ export class NetworkHelper {
         Logger.debug("network");
         for (let i = 2; i < 255; i++) {
             let ip = network + "." + i;
+            await new Promise(r => setTimeout(r, 200));
             NetworkHelper._portCheck(ip, port).then((check) => {
                 if (check){
                     callback(ip, port);
@@ -184,7 +187,6 @@ export class NetworkHelper {
                 Logger.trace(<string> e);
             });
         }
-
     }
 
 }

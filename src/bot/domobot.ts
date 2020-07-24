@@ -1,5 +1,14 @@
 export class DomoBot {
-    constructor() { }
+
+    private static instance : DomoBot;
+
+    public static getInstance() : DomoBot {
+        if (!DomoBot.instance)
+            DomoBot.instance = new DomoBot();
+        return DomoBot.instance;
+    }
+
+    private constructor() { }
     /**
      * init
      */

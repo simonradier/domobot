@@ -2,7 +2,7 @@ import { Connector } from "./connector";
 import { DomoObject } from "../iot/domo-object";
 import { Logger } from "../utils/logger";
 import { NetworkHelper, UPNPDevice } from "../utils/network-helper";
-import * as bent from "bent";
+import bent from "bent"
 
 export class HueBridge {
     public IP : string = "";

@@ -9,6 +9,11 @@ c.discover();
 NetworkHelper.PortDiscover(80, (ip, port) => {
     console.log(ip);
     console.log(port);
+});
+
+NetworkHelper.PortDiscover(443, (ip, port) => {
+    console.log(ip);
+    console.log(port);
 })
 
 
