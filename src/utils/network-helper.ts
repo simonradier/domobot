@@ -3,6 +3,7 @@ import { Logger } from "./logger";
 import dgram from "dgram";
 import { Socket } from "net"
 import { Observable } from "rxjs"
+import { Configuration } from "./config";
 
 
 export class UPNPDevice {
@@ -50,8 +51,8 @@ class UPNPCallBackFilter {
 
 export class NetworkHelper {
 
-    private static _localAdress : string = "";
-    private static _localMask : string = "";
+    private static _localIP : string = Configuration.networkLocalIp;
+    private static _localMask : string = Configuration.networkMask;
     private static _client =  dgram.createSocket("udp4");
     private static _UPNPDevices : Array<UPNPDevice> = new Array<UPNPDevice>();
     private static _discovering = false;
@@ -73,36 +74,37 @@ export class NetworkHelper {
         Logger.debug("Number of network interfaces : " + list.length);
         Logger.debug("List of network interfaces : " + list.join("|"));
         for (let iname of list) {
-            if (iname.startsWith("en") || iname.startsWith("wlan") || iname.startsWith("wifi")) {
+            if (iname.startsWith("en") || iname.startsWith("wlan") || iname.startsWith("wifi") || iname.startsWith("eth")) {
                 // Regarder si possible de pas caster
                 let inter = <os.NetworkInterfaceInfo[]> networkInterface[iname];
                 for (let line of inter) {
                     if (line.family == "IPv4" && !line.internal) {
-                        NetworkHelper._localAdress = line.address;
+                        NetworkHelper._localIP = line.address;
                         NetworkHelper._localMask = line.netmask;
                     }
                 }
+                break;
             }           
         }    
     }
 
     public static async getLocalIP() : Promise<string> {
-        if (NetworkHelper._localAdress == "")
+        if (NetworkHelper._localIP == "")
             await NetworkHelper.getNetworkInfo();
-        return NetworkHelper._localAdress;
+        return NetworkHelper._localIP;
     }
 
     public static async getNetMask() : Promise<string> {
-        if (NetworkHelper._localAdress == "")
+        if (NetworkHelper._localIP == "")
             await NetworkHelper.getNetworkInfo();
         return NetworkHelper._localMask;
     }
 
     public static async getBroadcastAddress() : Promise<string> {
-        if (NetworkHelper._localAdress == "")
+        if (NetworkHelper._localIP == "")
             await NetworkHelper.getNetworkInfo();
-        let ba = NetworkHelper._localAdress.split(".").splice(0,3).join(".") + ".255";
-        Logger.debug("Calculating Broadcast address from " + this._localAdress + " => " + ba)
+        let ba = NetworkHelper._localIP.split(".").splice(0,3).join(".") + ".255";
+        Logger.debug("Calculating Broadcast address from " + this._localIP + " => " + ba)
         return ba;    
     }
 
@@ -146,7 +148,7 @@ export class NetworkHelper {
                 }
             }
         });
-        NetworkHelper._client.bind(6900, address);
+        NetworkHelper._client.bind(6900, "0.0.0.0");
     }
 
 
@@ -184,6 +186,7 @@ export class NetworkHelper {
                 } /*else 
                     //Logger.trace(ip + " has the port " + port + " closed.")*/
             }).catch( (e) => {
+                
                 Logger.trace(<string> e);
             });
         }
