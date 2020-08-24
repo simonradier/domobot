@@ -4,6 +4,9 @@ import dgram from "dgram";
 import { Socket } from "net"
 import { Observable } from "rxjs"
 import { Configuration } from "./config";
+import { spawn, exec } from "child_process";
+import { promisify } from "util";
+import { resolve } from "path";
 
 
 export class UPNPDevice {
@@ -55,6 +58,7 @@ export class NetworkHelper {
     private static _localMask : string = Configuration.networkMask;
     private static _client =  dgram.createSocket("udp4");
     private static _UPNPDevices : Array<UPNPDevice> = new Array<UPNPDevice>();
+    private static _IPDevices : Map<string, string> = new Map<string, string>(); 
     private static _discovering = false;
     private static _UPNPdDiscoverCallBack : Array<UPNPCallBackFilter> = new Array<UPNPCallBackFilter>();
 
@@ -68,6 +72,14 @@ export class NetworkHelper {
         return result;
     }
 
+    public static async init() : Promise<void> {
+        await this.getNetworkInfo();
+    }
+
+    public static get IPDevices () {
+        return NetworkHelper._IPDevices;
+    }
+
     private static async getNetworkInfo() : Promise<void> {
         let networkInterface = os.networkInterfaces();
         let list = Object.keys(networkInterface);
@@ -79,8 +91,10 @@ export class NetworkHelper {
                 let inter = <os.NetworkInterfaceInfo[]> networkInterface[iname];
                 for (let line of inter) {
                     if (line.family == "IPv4" && !line.internal) {
-                        NetworkHelper._localIP = line.address;
-                        NetworkHelper._localMask = line.netmask;
+                        if (NetworkHelper._localIP != "")
+                            NetworkHelper._localIP = line.address;
+                        if (NetworkHelper._localMask != "")
+                            NetworkHelper._localMask = line.netmask;
                     }
                 }
                 break;
@@ -88,15 +102,11 @@ export class NetworkHelper {
         }    
     }
 
-    public static async getLocalIP() : Promise<string> {
-        if (NetworkHelper._localIP == "")
-            await NetworkHelper.getNetworkInfo();
+    public static getLocalIP() : string {
         return NetworkHelper._localIP;
     }
 
-    public static async getNetMask() : Promise<string> {
-        if (NetworkHelper._localIP == "")
-            await NetworkHelper.getNetworkInfo();
+    public static getNetMask() : string {
         return NetworkHelper._localMask;
     }
 
@@ -173,10 +183,10 @@ export class NetworkHelper {
     }
 
     public static async PortDiscover(port : number, callback :  (ip : string, port : number) => void) : Promise<void> {
-        let host = await NetworkHelper.getLocalIP();
+        let host = NetworkHelper.getLocalIP();
         let network = host.split(".").splice(0,3).join(".");
         Logger.debug("network");
-        for (let i = 2; i < 255; i++) {
+        for (let i = 1; i < 255; i++) {
             let ip = network + "." + i;
             await new Promise(r => setTimeout(r, 200));
             NetworkHelper._portCheck(ip, port).then((check) => {
@@ -190,6 +200,61 @@ export class NetworkHelper {
                 Logger.trace(<string> e);
             });
         }
+    }
+
+    public static PingDiscover() : Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            let host =  NetworkHelper.getLocalIP();
+            let network = host.split(".").splice(0,3).join(".");
+            let ips = new Array<string>();
+            for (let i = 1; i < 255; i++) {
+                let ip = network + "." + i;
+                promisify(exec)("ping -c 1 -W 1 " + ip).then(async () => {
+                    Logger.debug(ip + " is reachable");
+                    ips.push(ip);
+                    if (i == 254) {
+                        await NetworkHelper.GetMACfromIPs(ips);
+                        resolve();  
+                    }
+                }).catch(async (e) => {
+                    //Logger.debug(ip + " is not reachable");
+                    if (i == 254) {
+                        await NetworkHelper.GetMACfromIPs(ips);
+                        resolve(); 
+                    } 
+                });
+            }            
+        });
+    }
+
+    public static async GetMACfromIPs(ips : Array<string>) : Promise<void> {
+        return new Promise<void> ( (resolve, reject) => {
+            promisify(exec)("arp -an").then((values) => { 
+                let lines = values.stdout.split("\n");
+                for (let ip of ips) {
+                    let line = lines.find((x) => {
+                        return x.search(ip) > 0;
+                    });
+                    if (line) {
+                        let match = line.match(/([a-f0-9]{1,2}:){5}[a-f0-9]{1,2}/);
+                        if (match) {
+                            let mac = match[0];
+                            if (!NetworkHelper._IPDevices.get(ip)) {
+                                NetworkHelper._IPDevices.set(ip, mac);
+                                Logger.trace("IP : " + ip + " was added with MAC : " + mac);
+                            }
+                        else 
+                            Logger.warn("Can't find MAC of IP : " + ip);
+                        }
+                    }
+                    resolve();
+                }
+            }).catch( (e) => {
+                Logger.trace(e);
+                reject (e);
+            });
+            
+        });
     }
 
 }

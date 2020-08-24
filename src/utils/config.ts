@@ -1,8 +1,8 @@
 import domoconfig from "../domoconfig.json"
 
 export enum LogLevel {
-    Trace = 0,
-    Debug,
+    Debug = 0,
+    Trace,
     Information,
     Warning,
     Error,
